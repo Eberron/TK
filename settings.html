@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .settings-container {
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .api-key-input {
+      width: 100%;
+      padding: 12px;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-container">
+    <h2>API 设置</h2>
+    <input type="password" 
+           id="apiKeyInput" 
+           class="api-key-input"
+           placeholder="在此输入DeepSeek API密钥">
+    <button id="saveApiKey" class="primary-btn">保存设置</button>
+    <div id="statusMessage"></div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>
