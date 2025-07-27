@@ -1,10 +1,10 @@
 {
     "manifest_version": 3,
     "name": "智能页面总结助手",
-    "version": "2.1",
-    "description": "集成DeepSeek AI的智能内容总结工具",
+    "version": "2.2",
+    "description": "集成DeepSeek AI的智能内容总结工具，支持文本和图片分析",
     "permissions": ["activeTab", "scripting", "storage"],
-    "host_permissions": ["https://api.deepseek.com/*"],
+    "host_permissions": ["https://api.deepseek.com/*", "*://*/*"],
     "action": {
       "default_popup": "popup.html",
       "default_icon": {

@@ -52,14 +52,39 @@ document.addEventListener('DOMContentLoaded', async () => {
   
       // 获取页面内容
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const [contentResult] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => document.body.innerText.trim()
-      });
+      const includeImages = document.getElementById('includeImages').checked;
+      
+      let content;
+      if (includeImages) {
+        // 获取文本和图片内容
+        const [result] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: async () => {
+            return new Promise((resolve) => {
+              chrome.runtime.sendMessage({ action: "extractContent" }, (response) => {
+                resolve(response);
+              });
+            });
+          }
+        });
+        
+        if (result.result.success) {
+          content = result.result.content;
+        } else {
+          throw new Error(result.result.error || '获取内容失败');
+        }
+      } else {
+        // 只获取文本内容
+        const [contentResult] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => document.body.innerText.trim()
+        });
+        content = { text: contentResult.result, images: [] };
+      }
   
       // 生成总结
-      const summary = await generateSummary(contentResult.result);
-      document.getElementById('result').textContent = summary;
+      const summary = await generateSummary(content);
+      document.getElementById('result').innerHTML = summary;
   
       // 更新使用次数
       if (!isPro) {
@@ -76,6 +101,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function generateSummary(content) {
     const { deepseekApiKey } = await chrome.storage.local.get('deepseekApiKey');
     
+    let messages;
+    let model = "deepseek-chat";
+    
+    if (typeof content === 'string') {
+      // 兼容旧的纯文本模式
+      messages = [{
+        role: "user",
+        content: `请用简洁的中文总结以下内容，保留关键数据和结论：\n\n${content.slice(0, 12000)}`
+      }];
+    } else {
+      // 新的多模态模式
+      const { text, images } = content;
+      
+      if (images && images.length > 0) {
+        // 使用支持视觉的模型
+        model = "deepseek-vl-chat";
+        
+        const messageContent = [
+          {
+            type: "text",
+            text: `请分析以下网页内容并生成简洁的中文总结。如果有图片，请描述图片内容并结合文本进行综合分析：\n\n文本内容：\n${text.slice(0, 8000)}`
+          }
+        ];
+        
+        // 添加图片（最多3张以避免token过多）
+        for (let i = 0; i < Math.min(images.length, 3); i++) {
+          const img = images[i];
+          messageContent.push({
+            type: "image_url",
+            image_url: {
+              url: img.base64
+            }
+          });
+        }
+        
+        messages = [{
+          role: "user",
+          content: messageContent
+        }];
+      } else {
+        // 只有文本，使用普通模型
+        messages = [{
+          role: "user",
+          content: `请用简洁的中文总结以下内容，保留关键数据和结论：\n\n${text.slice(0, 12000)}`
+        }];
+      }
+    }
+    
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -83,16 +156,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         'Authorization': `Bearer ${deepseekApiKey}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [{
-          role: "user",
-          content: `请用简洁的中文总结以下内容，保留关键数据和结论：\n\n${content.slice(0, 12000)}`
-        }],
-        temperature: 0.7
+        model: model,
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1000
       })
     });
   
-    if (!response.ok) throw new Error('API请求失败');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API请求失败: ${response.status} - ${errorData.error?.message || '未知错误'}`);
+    }
+    
     const data = await response.json();
     return data.choices[0].message.content;
   }

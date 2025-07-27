@@ -8,6 +8,15 @@
   <div class="container">
     <h1>智能页面总结</h1>
     <div id="usage" class="usage-info"></div>
+    
+    <div class="options-container">
+      <label class="checkbox-container">
+        <input type="checkbox" id="includeImages" checked>
+        <span class="checkmark"></span>
+        包含图片分析
+      </label>
+    </div>
+    
     <button id="summarizeBtn" class="primary-btn">生成总结</button>
     
     <div id="proPrompt" class="pro-prompt">
@@ -24,7 +33,7 @@
     <div id="result" class="result-container"></div>
     <div class="footer-links">
       <a href="settings.html" target="_blank">API设置</a>
-      <span class="version">v2.1</span>
+      <span class="version">v2.2</span>
     </div>
   </div>
   <script src="popup.js"></script>
