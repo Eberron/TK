@@ -6,12 +6,18 @@ const I18N = {
     appDescription: '完全免费的智能页面总结工具，不存储用户数据，严格保护隐私',
     
     // 主界面
+    app_name: '智能页面总结',
     smartSummary: '智能页面总结',
+    free_service: '🎉 完全免费服务',
     freeService: '🎉 完全免费服务',
+    privacy_protection: '不存储数据 · 隐私保护',
     privacyProtection: '不存储数据 · 隐私保护',
+    include_images: '包含图片分析',
     includeImages: '包含图片分析',
+    generate_summary: '生成总结',
     generateSummary: '生成总结',
     generating: '生成中...',
+    history: '📚 历史记录',
     historyRecords: '📚 历史记录',
     
     // 用户状态
@@ -29,9 +35,13 @@ const I18N = {
     guestModeBtn: '游客模式（每日3次）',
     
     // 专业版提示
+    upgrade_pro_unlimited: '🎉 升级专业版解锁无限使用！',
     upgradePrompt: '🎉 升级专业版解锁无限使用！',
+    manage_subscription: '管理订阅',
     manageSubscription: '管理订阅',
+    upgrade_now: '立即升级',
     upgradeNow: '立即升级',
+    enter_license_key: '输入许可证密钥',
     licenseKeyPlaceholder: '输入许可证密钥',
     activate: '激活',
     
@@ -102,6 +112,7 @@ const I18N = {
     alreadyHaveAccount: '已有账号',
     
     // 页脚
+    privacy_policy: '隐私政策',
     privacyPolicy: '隐私政策',
     apiSettings: 'API',
     
@@ -117,12 +128,18 @@ const I18N = {
     appDescription: 'Completely free intelligent page summarization tool that does not store user data and strictly protects privacy',
     
     // Main interface
+    app_name: 'Smart Page Summary',
     smartSummary: 'Smart Page Summary',
+    free_service: '🎉 Completely Free Service',
     freeService: '🎉 Completely Free Service',
+    privacy_protection: 'No Data Storage · Privacy Protected',
     privacyProtection: 'No Data Storage · Privacy Protected',
+    include_images: 'Include Image Analysis',
     includeImages: 'Include Image Analysis',
+    generate_summary: 'Generate Summary',
     generateSummary: 'Generate Summary',
     generating: 'Generating...',
+    history: '📚 History',
     historyRecords: '📚 History',
     
     // User status
@@ -140,9 +157,13 @@ const I18N = {
     guestModeBtn: 'Guest Mode (3 times daily)',
     
     // Pro upgrade
+    upgrade_pro_unlimited: '🎉 Upgrade to Pro for unlimited usage!',
     upgradePrompt: '🎉 Upgrade to Pro for unlimited usage!',
+    manage_subscription: 'Manage Subscription',
     manageSubscription: 'Manage Subscription',
+    upgrade_now: 'Upgrade Now',
     upgradeNow: 'Upgrade Now',
+    enter_license_key: 'Enter license key',
     licenseKeyPlaceholder: 'Enter license key',
     activate: 'Activate',
     
@@ -213,6 +234,7 @@ const I18N = {
     alreadyHaveAccount: 'Already Have Account',
     
     // Footer
+    privacy_policy: 'Privacy Policy',
     privacyPolicy: 'Privacy Policy',
     apiSettings: 'API',
     
@@ -294,35 +316,21 @@ function updateUILanguage() {
   // 更新页面标题
   document.title = t('appName');
   
-  // 更新主要元素
-  const elements = {
-    'h1': t('smartSummary'),
-    '.free-notice span:first-child': t('freeService'),
-    '.free-notice span:last-child': t('privacyProtection'),
-    'label[for="includeImages"] span:last-child': t('includeImages'),
-    '#summarizeBtn': t('generateSummary'),
-    '#historyBtn': t('historyRecords'),
-    '#manageSubscriptionBtn': t('manageSubscription'),
-    '.payment-btn': t('upgradeNow'),
-    '#licenseKey': { placeholder: t('licenseKeyPlaceholder') },
-    '#activateLicense': t('activate'),
-    'a[href="privacy.html"]': t('privacyPolicy'),
-    '.api-settings-link': t('apiSettings')
-  };
+  // 更新所有带有data-i18n属性的元素
+  const elementsWithI18n = document.querySelectorAll('[data-i18n]');
+  elementsWithI18n.forEach(element => {
+    const key = element.getAttribute('data-i18n');
+    if (key) {
+      element.textContent = t(key);
+    }
+  });
   
-  Object.keys(elements).forEach(selector => {
-    const element = document.querySelector(selector);
-    if (element) {
-      const value = elements[selector];
-      if (typeof value === 'object') {
-        // 设置属性
-        Object.keys(value).forEach(attr => {
-          element[attr] = value[attr];
-        });
-      } else {
-        // 设置文本内容
-        element.textContent = value;
-      }
+  // 更新所有带有data-i18n-placeholder属性的元素
+  const elementsWithPlaceholder = document.querySelectorAll('[data-i18n-placeholder]');
+  elementsWithPlaceholder.forEach(element => {
+    const key = element.getAttribute('data-i18n-placeholder');
+    if (key) {
+      element.placeholder = t(key);
     }
   });
 }

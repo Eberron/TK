@@ -27,7 +27,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 添加语言切换事件
     const languageSelect = document.getElementById('languageSelect');
     if (languageSelect) {
-      languageSelect.value = currentLanguage;
+      // 获取当前语言设置
+      try {
+        const { userLanguage } = await chrome.storage.local.get('userLanguage');
+        languageSelect.value = userLanguage || 'zh-CN';
+      } catch (error) {
+        languageSelect.value = 'zh-CN';
+      }
+      
       languageSelect.addEventListener('change', async (e) => {
         await setLanguage(e.target.value);
       });

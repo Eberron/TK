@@ -6,10 +6,10 @@
 </head>
 <body>
   <div class="container">
-    <h1>智能页面总结</h1>
+    <h1 data-i18n="app_name">智能页面总结</h1>
     <div class="free-notice" style="background: linear-gradient(135deg, #e8f5e8, #f0f8f0); border: 1px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
-      <span style="color: #2e7d32; font-weight: bold;">🎉 完全免费服务</span>
-      <span style="color: #388e3c; font-size: 12px; margin-left: 10px;">不存储数据 · 隐私保护</span>
+      <span style="color: #2e7d32; font-weight: bold;" data-i18n="free_service">🎉 完全免费服务</span>
+      <span style="color: #388e3c; font-size: 12px; margin-left: 10px;" data-i18n="privacy_protection">不存储数据 · 隐私保护</span>
     </div>
     <div id="usage" class="usage-info"></div>
     
@@ -17,7 +17,7 @@
       <label class="checkbox-container">
         <input type="checkbox" id="includeImages" checked>
         <span class="checkmark"></span>
-        包含图片分析
+        <span data-i18n="include_images">包含图片分析</span>
       </label>
     </div>
     
@@ -28,23 +28,23 @@
     
     <!-- 管理订阅按钮独立显示 -->
     <div class="subscription-management">
-      <button id="manageSubscriptionBtn" class="manage-subscription-btn">管理订阅</button>
+      <button id="manageSubscriptionBtn" class="manage-subscription-btn" data-i18n="manage_subscription">管理订阅</button>
     </div>
     
     <div id="proPrompt" class="pro-prompt">
-      <p>🎉 升级专业版解锁无限使用！</p>
+      <p data-i18n="upgrade_pro_unlimited">🎉 升级专业版解锁无限使用！</p>
       <div class="payment-options">
-        <a href="https://payment.example.com" target="_blank" class="payment-btn">立即升级</a>
+        <a href="https://payment.example.com" target="_blank" class="payment-btn" data-i18n="upgrade_now">立即升级</a>
         <div class="license-box">
-          <input type="text" id="licenseKey" placeholder="输入许可证密钥">
-          <button id="activateLicense" class="secondary-btn">激活</button>
+          <input type="text" id="licenseKey" data-i18n-placeholder="enter_license_key" placeholder="输入许可证密钥">
+          <button id="activateLicense" class="secondary-btn" data-i18n="activate">激活</button>
         </div>
       </div>
     </div>
     
     <div id="result" class="result-container"></div>
     <div class="footer-links">
-      <a href="privacy.html" target="_blank">隐私政策</a>
+      <a href="privacy.html" target="_blank" data-i18n="privacy_policy">隐私政策</a>
       <span class="version">v2.5</span>
       <a href="settings.html" target="_blank" class="api-settings-link" style="font-size: 10px; color: #999; margin-left: 8px; text-decoration: none;">API</a>
       <select id="languageSelect" style="font-size: 10px; margin-left: 8px; border: none; background: transparent; color: #999;">
