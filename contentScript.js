@@ -50,10 +50,67 @@ function extractText() {
     return imageData;
   }
   
+  function extractTables() {
+    // 获取页面中的所有表格
+    const tables = document.querySelectorAll('table');
+    const tableData = [];
+    
+    for (let table of tables) {
+      try {
+        // 跳过太小的表格（可能是布局表格）
+        const rows = table.querySelectorAll('tr');
+        if (rows.length < 2) continue;
+        
+        const tableInfo = {
+          headers: [],
+          rows: [],
+          summary: ''
+        };
+        
+        // 提取表头
+        const headerRow = table.querySelector('thead tr') || rows[0];
+        const headerCells = headerRow.querySelectorAll('th, td');
+        headerCells.forEach(cell => {
+          tableInfo.headers.push(cell.innerText.trim());
+        });
+        
+        // 提取数据行
+        const dataRows = table.querySelectorAll('tbody tr').length > 0 ? 
+                        table.querySelectorAll('tbody tr') : 
+                        Array.from(rows).slice(table.querySelector('thead') ? 0 : 1);
+        
+        dataRows.forEach(row => {
+          const cells = row.querySelectorAll('td, th');
+          const rowData = [];
+          cells.forEach(cell => {
+            rowData.push(cell.innerText.trim());
+          });
+          if (rowData.some(cell => cell.length > 0)) {
+            tableInfo.rows.push(rowData);
+          }
+        });
+        
+        // 生成表格摘要
+        if (tableInfo.headers.length > 0 && tableInfo.rows.length > 0) {
+          tableInfo.summary = `表格包含${tableInfo.headers.length}列，${tableInfo.rows.length}行数据。列标题：${tableInfo.headers.join('、')}。`;
+          tableData.push(tableInfo);
+        }
+        
+        // 限制最多处理5个表格
+        if (tableData.length >= 5) break;
+      } catch (error) {
+        console.log('处理表格时出错:', error);
+      }
+    }
+    
+    return tableData;
+  }
+  
   async function extractContent() {
     const text = extractText();
     const images = await extractImages();
-    return { text, images };
+    const tables = extractTables();
+    return { text, images, tables };
   }
   
   // 将内容发送到 popup.js 进行总结

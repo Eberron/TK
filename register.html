@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>用户注册 - 智能页面总结助手</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .register-container {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .register-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .register-header h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .register-header p {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #4f46e5;
+    }
+    
+    .form-group .error {
+      color: #ef4444;
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .register-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+    
+    .register-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .register-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .login-link a {
+      color: #4f46e5;
+      text-decoration: none;
+    }
+    
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+    
+    .benefits {
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .benefits h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 16px;
+    }
+    
+    .benefits ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #666;
+    }
+    
+    .benefits li {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    
+    .verification-code {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .verification-code input {
+      flex: 1;
+    }
+    
+    .send-code-btn {
+      padding: 12px 20px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    
+    .send-code-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+    
+    .toast.success {
+      background: #10b981;
+    }
+    
+    .toast.error {
+      background: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <div class="register-header">
+      <h1>🚀 注册账号</h1>
+      <p>创建您的智能页面总结助手账号</p>
+    </div>
+    
+    <div class="benefits">
+      <h3>🎁 注册即享</h3>
+      <ul>
+        <li>每日10次免费智能总结</li>
+        <li>文本、图片、表格多模态分析</li>
+        <li>云端数据同步</li>
+        <li>专业版升级优惠</li>
+      </ul>
+    </div>
+    
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="email">邮箱地址</label>
+        <input type="email" id="email" name="email" placeholder="请输入您的邮箱地址" required>
+        <div class="error" id="emailError">请输入有效的邮箱地址</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input type="password" id="password" name="password" placeholder="请输入密码（至少6位）" required>
+        <div class="error" id="passwordError">密码至少需要6位字符</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="confirmPassword">确认密码</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入密码" required>
+        <div class="error" id="confirmPasswordError">两次输入的密码不一致</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="verificationCode">邮箱验证码</label>
+        <div class="verification-code">
+          <input type="text" id="verificationCode" name="verificationCode" placeholder="请输入验证码" required>
+          <button type="button" id="sendCodeBtn" class="send-code-btn">发送验证码</button>
+        </div>
+        <div class="error" id="verificationCodeError">请输入正确的验证码</div>
+      </div>
+      
+      <button type="submit" id="registerBtn" class="register-btn">创建账号</button>
+    </form>
+    
+    <div class="login-link">
+      <p>已有账号？<a href="login.html">立即登录</a></p>
+    </div>
+  </div>
+  
+  <script src="register.js"></script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 {
     "manifest_version": 3,
     "name": "智能页面总结助手",
-    "version": "2.2",
-    "description": "集成DeepSeek AI的智能内容总结工具，支持文本和图片分析",
-    "permissions": ["activeTab", "scripting", "storage"],
+    "version": "2.5",
+  "description": "完全免费的智能页面总结工具，不存储用户数据，严格保护隐私，仅对页面内容进行总结以便预览",
+    "permissions": ["activeTab", "scripting", "storage", "contextMenus", "notifications"],
     "host_permissions": ["https://api.deepseek.com/*", "*://*/*"],
     "action": {
       "default_popup": "popup.html",
@@ -18,9 +18,34 @@
       "48": "images/icon48.png",
       "128": "images/icon128.png"
     },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "commands": {
+      "quick_summarize": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+S",
+          "mac": "Command+Shift+S"
+        },
+        "description": "Quick summarize current page / 快速总结当前页面"
+      },
+      "toggle_image_analysis": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+I",
+          "mac": "Command+Shift+I"
+        },
+        "description": "Toggle image analysis mode / 切换图片分析模式"
+      }
+    },
     "content_scripts": [{
       "matches": ["<all_urls>"],
       "js": ["contentScript.js"],
       "run_at": "document_end"
-    }]
+    }],
+    "web_accessible_resources": [
+    {
+      "resources": ["settings.html", "subscription.html", "payment-success.html", "register.html", "login.html", "privacy.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
   }

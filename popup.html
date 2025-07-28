@@ -7,6 +7,10 @@
 <body>
   <div class="container">
     <h1>智能页面总结</h1>
+    <div class="free-notice" style="background: linear-gradient(135deg, #e8f5e8, #f0f8f0); border: 1px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+      <span style="color: #2e7d32; font-weight: bold;">🎉 完全免费服务</span>
+      <span style="color: #388e3c; font-size: 12px; margin-left: 10px;">不存储数据 · 隐私保护</span>
+    </div>
     <div id="usage" class="usage-info"></div>
     
     <div class="options-container">
@@ -17,7 +21,15 @@
       </label>
     </div>
     
-    <button id="summarizeBtn" class="primary-btn">生成总结</button>
+    <div class="action-buttons">
+      <button id="summarizeBtn" class="primary-btn" data-i18n="generate_summary">生成总结</button>
+      <button id="historyBtn" class="secondary-btn" data-i18n="history">📚 历史记录</button>
+    </div>
+    
+    <!-- 管理订阅按钮独立显示 -->
+    <div class="subscription-management">
+      <button id="manageSubscriptionBtn" class="manage-subscription-btn">管理订阅</button>
+    </div>
     
     <div id="proPrompt" class="pro-prompt">
       <p>🎉 升级专业版解锁无限使用！</p>
@@ -32,10 +44,17 @@
     
     <div id="result" class="result-container"></div>
     <div class="footer-links">
-      <a href="settings.html" target="_blank">API设置</a>
-      <span class="version">v2.2</span>
+      <a href="privacy.html" target="_blank">隐私政策</a>
+      <span class="version">v2.5</span>
+      <a href="settings.html" target="_blank" class="api-settings-link" style="font-size: 10px; color: #999; margin-left: 8px; text-decoration: none;">API</a>
+      <select id="languageSelect" style="font-size: 10px; margin-left: 8px; border: none; background: transparent; color: #999;">
+        <option value="zh-CN">中文</option>
+        <option value="en">English</option>
+      </select>
     </div>
   </div>
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

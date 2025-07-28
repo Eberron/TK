@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .success-container {
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 40px;
+      text-align: center;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .success-icon {
+      font-size: 64px;
+      color: #10b981;
+      margin-bottom: 20px;
+      animation: bounce 1s ease-in-out;
+    }
+    
+    .success-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    
+    .success-message {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    
+    .plan-info {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .plan-info h3 {
+      color: #16a34a;
+      margin: 0 0 10px 0;
+      font-size: 18px;
+    }
+    
+    .plan-details {
+      color: #166534;
+      font-size: 14px;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #64748b;
+      margin: 20px 0;
+    }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e2e8f0;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error-container {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      display: none;
+    }
+    
+    .error-title {
+      color: #dc2626;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .error-message {
+      color: #991b1b;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="success-container">
+    <!-- 加载状态 -->
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+      <span>正在处理支付结果...</span>
+    </div>
+    
+    <!-- 成功状态 -->
+    <div id="successState" style="display: none;">
+      <div class="success-icon">🎉</div>
+      <h1 class="success-title">支付成功！</h1>
+      <p class="success-message">
+        恭喜您成功订阅智能页面总结助手专业版！<br>
+        您现在可以享受无限次使用和所有高级功能。
+      </p>
+      
+      <div id="planInfo" class="plan-info">
+        <!-- 计划信息将在这里动态填充 -->
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn btn-primary" onclick="openExtension()">开始使用</button>
+        <a href="subscription.html" class="btn btn-secondary">管理订阅</a>
+      </div>
+    </div>
+    
+    <!-- 错误状态 -->
+    <div id="errorState" class="error-container">
+      <div class="error-title">支付处理失败</div>
+      <div id="errorMessage" class="error-message"></div>
+      <div class="action-buttons" style="margin-top: 20px;">
+        <a href="subscription.html" class="btn btn-primary">重新订阅</a>
+        <button class="btn btn-secondary" onclick="contactSupport()">联系客服</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 订阅计划配置
+    const SUBSCRIPTION_PLANS = {
+      monthly: {
+        name: '专业版月付',
+        price: 19,
+        period: '每月',
+        duration: '30天'
+      },
+      yearly: {
+        name: '专业版年付',
+        price: 199,
+        period: '每年',
+        duration: '365天'
+      },
+      lifetime: {
+        name: '终身会员',
+        price: 599,
+        period: '终身',
+        duration: '永久'
+      }
+    };
+    
+    // 页面加载时处理支付结果
+    document.addEventListener('DOMContentLoaded', async () => {
+      await handlePaymentResult();
+    });
+    
+    // 处理支付结果
+    async function handlePaymentResult() {
+      try {
+        // 从URL参数获取支付信息
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order_id');
+        const status = urlParams.get('status');
+        const planType = urlParams.get('plan_type');
+        
+        if (status === 'success' && orderId) {
+          await processSuccessfulPayment(orderId, planType);
+        } else if (status === 'failed') {
+          showError('支付失败，请重试或联系客服。');
+        } else {
+          // 尝试从本地存储获取待处理订单
+          const { pendingOrder } = await chrome.storage.local.get('pendingOrder');
+          if (pendingOrder) {
+            await processSuccessfulPayment(pendingOrder.orderId, pendingOrder.planType);
+          } else {
+            showError('未找到有效的支付信息。');
+          }
+        }
+      } catch (error) {
+        console.error('处理支付结果失败:', error);
+        showError('处理支付结果时发生错误，请联系客服。');
+      }
+    }
+    
+    // 处理成功的支付
+    async function processSuccessfulPayment(orderId, planType) {
+      try {
+        // 计算订阅到期时间
+        let expiryDate = null;
+        if (planType === 'monthly') {
+          expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        } else if (planType === 'yearly') {
+          expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+        }
+        
+        // 更新订阅状态
+        await chrome.storage.local.set({
+          isPro: true,
+          subscriptionPlan: planType,
+          subscriptionExpiry: expiryDate ? expiryDate.getTime() : null,
+          usageCount: 0, // 重置使用次数
+          lastPaymentDate: Date.now(),
+          orderId: orderId
+        });
+        
+        // 清除待处理订单
+        await chrome.storage.local.remove('pendingOrder');
+        
+        // 显示成功信息
+        showSuccess(planType, expiryDate);
+        
+      } catch (error) {
+        console.error('处理订阅激活失败:', error);
+        showError('订阅激活失败，请联系客服处理。');
+      }
+    }
+    
+    // 显示成功状态
+    function showSuccess(planType, expiryDate) {
+      const plan = SUBSCRIPTION_PLANS[planType];
+      if (!plan) {
+        showError('未知的订阅计划类型。');
+        return;
+      }
+      
+      // 构建计划信息
+      let expiryText = '';
+      if (expiryDate && planType !== 'lifetime') {
+        expiryText = `<p class="plan-details">有效期至: ${expiryDate.toLocaleDateString()}</p>`;
+      } else if (planType === 'lifetime') {
+        expiryText = `<p class="plan-details">终身有效，享受所有未来更新</p>`;
+      }
+      
+      document.getElementById('planInfo').innerHTML = `
+        <h3>${plan.name}</h3>
+        <p class="plan-details">订阅费用: ¥${plan.price} (${plan.period})</p>
+        ${expiryText}
+        <p class="plan-details">✅ 无限次使用 ✅ 高级功能 ✅ 优先支持</p>
+      `;
+      
+      // 隐藏加载状态，显示成功状态
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('successState').style.display = 'block';
+    }
+    
+    // 显示错误状态
+    function showError(message) {
+      document.getElementById('errorMessage').textContent = message;
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('errorState').style.display = 'block';
+    }
+    
+    // 打开扩展
+    function openExtension() {
+      // 关闭当前标签页
+      chrome.tabs.getCurrent((tab) => {
+        chrome.tabs.remove(tab.id);
+      });
+      
+      // 打开扩展弹窗（通过点击扩展图标）
+      chrome.action.openPopup();
+    }
+    
+    // 联系客服
+    function contactSupport() {
+      const email = 'support@example.com';
+      const subject = '智能页面总结助手 - 支付问题咨询';
+      const body = `您好，我在使用智能页面总结助手时遇到了支付问题，请协助处理。\n\n问题描述：\n\n\n用户信息：\n- 时间：${new Date().toLocaleString()}\n- 浏览器：${navigator.userAgent}`;
+      
+      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(mailtoUrl);
+    }
+  </script>
+</body>
+</html>

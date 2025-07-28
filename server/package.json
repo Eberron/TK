@@ -1,0 +1,31 @@
+{
+  "name": "tk-subscription-api",
+  "version": "1.0.0",
+  "description": "智能页面总结插件订阅管理API服务器",
+  "main": "subscription-api.js",
+  "scripts": {
+    "start": "node subscription-api.js",
+    "dev": "nodemon subscription-api.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "subscription",
+    "payment",
+    "license",
+    "api",
+    "chrome-extension"
+  ],
+  "author": "TK Team",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
