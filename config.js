@@ -30,10 +30,10 @@ const CONFIG = {
     lifetime: { name: '终身会员', price: 599 }
   },
   
-  // 管理后台配置
+  // 管理后台配置 - 生产环境请修改默认密码
   ADMIN: {
     DEFAULT_USERNAME: 'admin',
-    DEFAULT_PASSWORD: 'AdminPass123!@#'
+    DEFAULT_PASSWORD: 'your_secure_password_here' // 请在生产环境中修改此密码
   }
 };
 
