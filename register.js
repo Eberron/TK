@@ -1,7 +1,7 @@
 // 用户注册逻辑
 class UserRegistration {
   constructor() {
-    this.apiBaseUrl = 'https://api.example.com'; // 替换为实际API地址
+    this.apiBaseUrl = 'http://localhost:3000'; // 本地API服务器地址
     this.countdown = 0;
     this.countdownTimer = null;
     this.init();
@@ -124,7 +124,7 @@ class UserRegistration {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (result && result.success) {
         this.showToast('验证码已发送到您的邮箱', 'success');
         this.startCountdown();
       } else {
@@ -190,7 +190,7 @@ class UserRegistration {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (result && result.success) {
         // 注册成功，保存用户信息
         await this.saveUserInfo(result.data);
         this.showToast('注册成功！正在跳转...', 'success');

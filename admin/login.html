@@ -196,12 +196,13 @@
         const API_BASE_URL = CONFIG.API_BASE_URL + '/api';
 
         // 页面加载完成后检查是否已登录
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // 检查是否是从管理后台跳转过来的（避免循环跳转）
             const urlParams = new URLSearchParams(window.location.search);
             const fromAdmin = urlParams.get('from') === 'admin';
             
             if (!fromAdmin) {
+                // 统一使用localStorage获取Token
                 const adminToken = localStorage.getItem('adminToken');
                 if (adminToken) {
                     // 验证token是否有效
@@ -243,7 +244,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 保存token
+                    // 统一使用localStorage保存Token
                     localStorage.setItem('adminToken', data.data.token);
                     
                     // 跳转到管理后台
@@ -255,14 +256,7 @@
             .catch(error => {
                 console.error('登录失败:', error);
                 
-                // 模拟登录验证（开发阶段）
-                if (username === 'admin' && password === 'admin123') {
-                    const mockToken = 'mock_admin_token_' + Date.now();
-                    localStorage.setItem('adminToken', mockToken);
-                    window.location.href = 'index.html';
-                } else {
-                    showError('用户名或密码错误');
-                }
+                showError('登录服务暂时不可用，请稍后重试');
             })
             .finally(() => {
                 setLoading(false);
@@ -284,18 +278,14 @@
                     // Token有效，直接跳转
                     window.location.href = 'index.html';
                 } else {
-                    // Token无效，清除
+                    // 清除localStorage存储的Token
                     localStorage.removeItem('adminToken');
                 }
             })
             .catch(error => {
                 console.error('Token验证失败:', error);
-                // 模拟验证（开发阶段）
-                if (token.startsWith('mock_admin_token_')) {
-                    window.location.href = 'index.html';
-                } else {
-                    localStorage.removeItem('adminToken');
-                }
+                // 清除localStorage存储的Token
+                localStorage.removeItem('adminToken');
             });
         }
 

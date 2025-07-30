@@ -291,12 +291,29 @@
         expiryText = `<p class="plan-details">终身有效，享受所有未来更新</p>`;
       }
       
-      document.getElementById('planInfo').innerHTML = `
-        <h3>${plan.name}</h3>
-        <p class="plan-details">订阅费用: ¥${plan.price} (${plan.period})</p>
-        ${expiryText}
-        <p class="plan-details">✅ 无限次使用 ✅ 高级功能 ✅ 优先支持</p>
-      `;
+      // 安全地创建计划信息
+      const planInfoDiv = document.getElementById('planInfo');
+      planInfoDiv.innerHTML = '';
+      
+      const h3 = document.createElement('h3');
+      h3.textContent = plan.name;
+      planInfoDiv.appendChild(h3);
+      
+      const priceP = document.createElement('p');
+      priceP.className = 'plan-details';
+      priceP.textContent = `订阅费用: ¥${plan.price} (${plan.period})`;
+      planInfoDiv.appendChild(priceP);
+      
+      if (expiryText) {
+        const expiryDiv = document.createElement('div');
+        expiryDiv.innerHTML = expiryText;
+        planInfoDiv.appendChild(expiryDiv);
+      }
+      
+      const featuresP = document.createElement('p');
+      featuresP.className = 'plan-details';
+      featuresP.textContent = '✅ 无限次使用 ✅ 高级功能 ✅ 优先支持';
+      planInfoDiv.appendChild(featuresP);
       
       // 隐藏加载状态，显示成功状态
       document.getElementById('loadingState').style.display = 'none';

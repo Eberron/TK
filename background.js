@@ -102,17 +102,16 @@ async function handleSummarize(tab, includeImages) {
       return;
     }
     
-    // 注入内容脚本并提取内容
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      function: includeImages ? extractContentWithImages : extractTextOnly
+    // 发送消息到content script提取内容
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: includeImages ? 'extractContent' : 'extractText'
     });
     
-    if (results && results[0] && results[0].result) {
+    if (response && (response.text || response.content)) {
       // 发送消息到popup进行总结
       chrome.runtime.sendMessage({
         action: 'background_summarize',
-        content: results[0].result,
+        content: response.content || { text: response.text, images: [], tables: [] },
         includeImages: includeImages
       });
       
@@ -121,13 +120,8 @@ async function handleSummarize(tab, includeImages) {
     }
   } catch (error) {
     console.error('总结失败:', error);
-    // 显示错误通知
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'images/icon48.png',
-      title: '总结失败',
-      message: '无法总结当前页面，请稍后重试'
-    });
+    // 打开popup显示错误
+    chrome.action.openPopup();
   }
 }
 
@@ -135,12 +129,7 @@ async function handleSummarize(tab, includeImages) {
 async function handleSelectionSummarize(tab, selectionText) {
   try {
     if (!selectionText || selectionText.trim().length < 10) {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'images/icon48.png',
-        title: '文本太短',
-        message: '请选择更多文本进行总结'
-      });
+      // 文本太短，直接返回
       return;
     }
     
@@ -172,12 +161,7 @@ async function toggleImageAnalysis(tab) {
     
     await chrome.storage.local.set({ imageAnalysisEnabled: newState });
     
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'images/icon48.png',
-      title: '图片分析模式',
-      message: newState ? '已启用图片分析' : '已禁用图片分析'
-    });
+    // 图片分析模式已切换，状态保存到storage中
   } catch (error) {
     console.error('切换图片分析模式失败:', error);
   }
@@ -210,89 +194,4 @@ async function checkGuestUsage() {
   }
 }
 
-// 提取文本内容（注入到页面的函数）
-function extractTextOnly() {
-  return {
-    text: document.body.innerText || '',
-    images: [],
-    tables: []
-  };
-}
-
-// 提取包含图片的内容（注入到页面的函数）
-function extractContentWithImages() {
-  // 提取文本
-  const text = document.body.innerText || '';
-  
-  // 提取图片
-  const images = [];
-  const imgElements = document.querySelectorAll('img');
-  
-  for (let i = 0; i < Math.min(imgElements.length, 5); i++) {
-    const img = imgElements[i];
-    if (img.width >= 50 && img.height >= 50) {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = Math.min(img.width, 800);
-        canvas.height = Math.min(img.height, 600);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        images.push({
-          src: img.src,
-          alt: img.alt || '',
-          base64: canvas.toDataURL('image/jpeg', 0.8)
-        });
-      } catch (error) {
-        console.log('处理图片失败:', error);
-      }
-    }
-  }
-  
-  // 提取表格
-  const tables = [];
-  const tableElements = document.querySelectorAll('table');
-  
-  for (let i = 0; i < Math.min(tableElements.length, 5); i++) {
-    const table = tableElements[i];
-    const rows = table.querySelectorAll('tr');
-    
-    if (rows.length >= 2) {
-      const tableInfo = {
-        headers: [],
-        rows: [],
-        summary: ''
-      };
-      
-      // 提取表头
-      const headerRow = table.querySelector('thead tr') || rows[0];
-      const headerCells = headerRow.querySelectorAll('th, td');
-      headerCells.forEach(cell => {
-        tableInfo.headers.push(cell.innerText.trim());
-      });
-      
-      // 提取数据行
-      const dataRows = table.querySelectorAll('tbody tr').length > 0 ? 
-                      table.querySelectorAll('tbody tr') : 
-                      Array.from(rows).slice(1);
-      
-      dataRows.forEach(row => {
-        const cells = row.querySelectorAll('td, th');
-        const rowData = [];
-        cells.forEach(cell => {
-          rowData.push(cell.innerText.trim());
-        });
-        if (rowData.some(cell => cell.length > 0)) {
-          tableInfo.rows.push(rowData);
-        }
-      });
-      
-      if (tableInfo.headers.length > 0 && tableInfo.rows.length > 0) {
-        tableInfo.summary = `表格包含${tableInfo.headers.length}列，${tableInfo.rows.length}行数据。`;
-        tables.push(tableInfo);
-      }
-    }
-  }
-  
-  return { text, images, tables };
-}
+// Background script functions end here

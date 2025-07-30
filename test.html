@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TK智能总结 - 测试页面</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .test-image {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            margin: 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+            margin: 15px 0;
+        }
+        .instructions {
+            background-color: #d1ecf1;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #bee5eb;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TK智能总结扩展测试页面</h1>
+        
+        <div class="instructions">
+            <h3>📋 测试说明</h3>
+            <p>这是一个专门用于测试TK智能总结Chrome扩展功能的页面。请按照以下步骤进行测试：</p>
+            <ol>
+                <li>确保已在Chrome中加载了TK智能总结扩展</li>
+                <li>点击浏览器工具栏中的扩展图标</li>
+                <li>尝试生成页面总结功能</li>
+                <li>测试图片分析功能（勾选"包含图片分析"选项）</li>
+                <li>右键点击页面，测试右键菜单功能</li>
+                <li>选中部分文本，测试选中文本总结功能</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>📝 文本内容测试</h2>
+            <p>这是一段用于测试文本提取和总结功能的示例内容。TK智能总结扩展应该能够提取这些文本内容并生成相应的总结。</p>
+            <p>人工智能技术正在快速发展，特别是在自然语言处理领域。大型语言模型如GPT、Claude等展现出了强大的文本理解和生成能力，为各种应用场景提供了新的可能性。</p>
+            <p>Chrome扩展开发是一个有趣的技术领域，它允许开发者为浏览器添加自定义功能。通过manifest.json配置文件、background scripts、content scripts和popup页面，开发者可以创建功能丰富的浏览器扩展。</p>
+        </div>
+
+        <div class="section">
+            <h2>🖼️ 图片内容测试</h2>
+            <p>以下是一些测试图片，用于验证图片分析功能：</p>
+            <div class="test-image" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">测试图片 1</div>
+            <div class="test-image" style="background: linear-gradient(45deg, #a8e6cf, #dcedc1); display: flex; align-items: center; justify-content: center; color: #333; font-weight: bold;">测试图片 2</div>
+            <div class="test-image" style="background: linear-gradient(45deg, #ffd93d, #ff6b6b); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">测试图片 3</div>
+        </div>
+
+        <div class="section">
+            <h2>📊 表格内容测试</h2>
+            <p>以下表格用于测试表格数据提取功能：</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>功能模块</th>
+                        <th>状态</th>
+                        <th>描述</th>
+                        <th>优先级</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>文本提取</td>
+                        <td>✅ 完成</td>
+                        <td>提取页面文本内容</td>
+                        <td>高</td>
+                    </tr>
+                    <tr>
+                        <td>图片分析</td>
+                        <td>✅ 完成</td>
+                        <td>分析页面图片内容</td>
+                        <td>中</td>
+                    </tr>
+                    <tr>
+                        <td>表格解析</td>
+                        <td>✅ 完成</td>
+                        <td>解析表格数据结构</td>
+                        <td>中</td>
+                    </tr>
+                    <tr>
+                        <td>AI总结</td>
+                        <td>✅ 完成</td>
+                        <td>使用AI生成内容总结</td>
+                        <td>高</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>🔍 选中文本测试</h2>
+            <div class="highlight">
+                <p><strong>请选中这段文本进行测试：</strong></p>
+                <p>这是一段专门用于测试选中文本总结功能的内容。当用户选中这段文本并右键点击时，应该能够看到"总结选中文本"的菜单选项。点击该选项后，扩展应该能够对选中的文本进行智能总结。</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ 技术规格测试</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>技术组件</th>
+                        <th>版本</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Manifest V3</td>
+                        <td>3.0</td>
+                        <td>扩展配置文件</td>
+                    </tr>
+                    <tr>
+                        <td>Service Worker</td>
+                        <td>-</td>
+                        <td>后台脚本</td>
+                    </tr>
+                    <tr>
+                        <td>Content Script</td>
+                        <td>-</td>
+                        <td>页面内容提取</td>
+                    </tr>
+                    <tr>
+                        <td>DeepSeek API</td>
+                        <td>v1</td>
+                        <td>AI文本生成</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="highlight">
+            <h3>🎯 预期测试结果</h3>
+            <ul>
+                <li>✅ 扩展图标应该出现在浏览器工具栏中</li>
+                <li>✅ 点击图标应该打开popup弹窗</li>
+                <li>✅ 弹窗中应该显示"生成总结"按钮</li>
+                <li>✅ 右键菜单应该包含总结相关选项</li>
+                <li>✅ 选中文本后右键应该显示"总结选中文本"选项</li>
+                <li>✅ 所有功能应该正常工作，无JavaScript错误</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e8f5e8; border-radius: 8px;">
+            <h3>🚀 开始测试</h3>
+            <p>现在可以开始测试TK智能总结扩展的各项功能了！</p>
+            <p style="font-size: 14px; color: #666;">如果遇到任何问题，请检查浏览器控制台是否有错误信息。</p>
+        </div>
+    </div>
+</body>
+</html>

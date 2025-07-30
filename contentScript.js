@@ -113,11 +113,20 @@ function extractText() {
     return { text, images, tables };
   }
   
-  // 将内容发送到 popup.js 进行总结
+  // 监听来自background和popup的消息
   chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
     if (request.action === "extractText") {
       const text = extractText();
       sendResponse({ text: text });
+      return true;
+    } else if (request.action === "extractTextOnly") {
+      try {
+        const text = extractText();
+        sendResponse({ success: true, content: text });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return true;
     } else if (request.action === "extractContent") {
       try {
         const content = await extractContent();
@@ -125,6 +134,7 @@ function extractText() {
       } catch (error) {
         sendResponse({ success: false, error: error.message });
       }
-     }
-   });
+      return true;
+    }
+  });
   

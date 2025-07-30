@@ -33,7 +33,7 @@ const CONFIG = {
   // 管理后台配置
   ADMIN: {
     DEFAULT_USERNAME: 'admin',
-    DEFAULT_PASSWORD: 'admin123'
+    DEFAULT_PASSWORD: 'AdminPass123!@#'
   }
 };
 

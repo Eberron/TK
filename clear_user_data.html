@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>清除用户数据</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #c0392b;
+        }
+        .success {
+            color: #27ae60;
+            margin-top: 20px;
+        }
+        .info {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 用户数据清除工具</h1>
+        <div class="info">
+            <h3>说明：</h3>
+            <p>如果您在使用插件时遇到登录注册按钮不显示的问题，可能是因为浏览器中有缓存的用户数据。</p>
+            <p>点击下面的按钮可以清除所有用户数据，重置到初始状态。</p>
+        </div>
+        
+        <button id="clearDataBtn" class="btn">清除所有用户数据</button>
+        <button id="checkStatusBtn" class="btn" style="background: #3498db;">检查当前状态</button>
+        
+        <div id="status"></div>
+        <div id="result"></div>
+        
+        <div style="margin-top: 30px;">
+            <a href="popup.html" style="color: #3498db; text-decoration: none;">← 返回主页面</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('clearDataBtn').addEventListener('click', async function() {
+            try {
+                // 清除localStorage
+                localStorage.clear();
+                
+                // 清除Chrome存储（如果在扩展环境中）
+                if (typeof chrome !== 'undefined' && chrome.storage) {
+                    await chrome.storage.local.clear();
+                }
+                
+                document.getElementById('result').innerHTML = 
+                    '<div class="success">✅ 用户数据已清除！请刷新主页面或重新打开插件。</div>';
+                    
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: #e74c3c;">❌ 清除失败: ' + error.message + '</div>';
+            }
+        });
+        
+        document.getElementById('checkStatusBtn').addEventListener('click', async function() {
+            try {
+                let userInfo = null;
+                
+                // 检查localStorage
+                const localUserInfo = localStorage.getItem('userInfo');
+                
+                // 检查Chrome存储
+                let chromeUserInfo = null;
+                if (typeof chrome !== 'undefined' && chrome.storage) {
+                    const result = await chrome.storage.local.get('userInfo');
+                    chromeUserInfo = result.userInfo;
+                }
+                
+                let statusHtml = '<div class="info"><h3>当前状态：</h3>';
+                
+                if (localUserInfo) {
+                    statusHtml += '<p><strong>localStorage:</strong> 存在用户数据</p>';
+                    statusHtml += '<pre>' + localUserInfo + '</pre>';
+                } else {
+                    statusHtml += '<p><strong>localStorage:</strong> 无用户数据</p>';
+                }
+                
+                if (chromeUserInfo) {
+                    statusHtml += '<p><strong>Chrome存储:</strong> 存在用户数据</p>';
+                    statusHtml += '<pre>' + JSON.stringify(chromeUserInfo, null, 2) + '</pre>';
+                } else {
+                    statusHtml += '<p><strong>Chrome存储:</strong> 无用户数据</p>';
+                }
+                
+                statusHtml += '</div>';
+                
+                document.getElementById('status').innerHTML = statusHtml;
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    '<div style="color: #e74c3c;">❌ 检查失败: ' + error.message + '</div>';
+            }
+        });
+    </script>
+</body>
+</html>

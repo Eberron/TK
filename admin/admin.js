@@ -13,15 +13,17 @@ let licensesData = [];
 let statsData = {};
 
 // 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', function() {
-    checkAdminAuth();
+document.addEventListener('DOMContentLoaded', async function() {
+    await checkAdminAuth();
     loadDashboardStats();
     loadUsers();
 });
 
 // 检查管理员权限
-function checkAdminAuth() {
-    const adminToken = localStorage.getItem('adminToken');
+async function checkAdminAuth() {
+    // 统一使用localStorage存储Token（确保与登录页面一致）
+    let adminToken = localStorage.getItem('adminToken');
+    
     if (!adminToken) {
         // 重定向到登录页面
         window.location.href = 'login.html?from=admin';
@@ -29,43 +31,42 @@ function checkAdminAuth() {
     }
     
     // 验证token有效性
-    fetch(`${API_BASE_URL}/admin/verify`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`
-        }
-    })
-    .then(response => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${adminToken}`
+            }
+        });
+        
         if (!response.ok) {
-            throw new Error('Token无效');
+            throw new Error(`HTTP ${response.status}`);
         }
-        return response.json();
-    })
-    .then(data => {
+        
+        const data = await response.json();
+        
         if (data.success) {
             document.getElementById('adminName').textContent = data.data.name || '管理员';
+            return; // 验证成功，继续执行
         } else {
-            throw new Error('验证失败');
+            throw new Error(data.message || '验证失败');
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('管理员验证失败:', error);
         
-        // 模拟验证（开发阶段）
-        if (adminToken.startsWith('mock_admin_token_')) {
-            document.getElementById('adminName').textContent = '管理员';
-            return;
-        }
-        
+        // 清除无效Token
         localStorage.removeItem('adminToken');
+        
+        // 重定向到登录页面
         window.location.href = 'login.html?from=admin';
-    });
+    }
 }
 
 // 退出登录
 function logout() {
     if (confirm('确定要退出登录吗？')) {
+        // 清除Token
         localStorage.removeItem('adminToken');
         window.location.href = 'login.html';
     }
@@ -122,12 +123,12 @@ function loadDashboardStats() {
     })
     .catch(error => {
         console.error('加载统计数据失败:', error);
-        // 显示模拟数据
+        // 显示错误信息
         statsData = {
-            totalUsers: 1234,
-            activeUsers: 856,
-            proUsers: 123,
-            totalOrders: 456
+            totalUsers: 0,
+            activeUsers: 0,
+            proUsers: 0,
+            totalOrders: 0
         };
         updateStatsDisplay();
     });
@@ -143,7 +144,12 @@ function updateStatsDisplay() {
 
 // 加载用户数据
 function loadUsers() {
-    document.getElementById('usersTable').innerHTML = '<div class="loading">加载中...</div>';
+    const usersTable = document.getElementById('usersTable');
+    usersTable.innerHTML = '';
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.textContent = '加载中...';
+    usersTable.appendChild(loadingDiv);
     
     fetch(`${API_BASE_URL}/admin/users`, {
         headers: {
@@ -161,16 +167,25 @@ function loadUsers() {
     })
     .catch(error => {
         console.error('加载用户数据失败:', error);
-        // 显示模拟数据
-        usersData = generateMockUsers();
-        renderUsersTable(usersData);
+        // 显示错误信息
+        const usersTable = document.getElementById('usersTable');
+        usersTable.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = '无法连接到服务器，请检查网络连接';
+        usersTable.appendChild(errorDiv);
     });
 }
 
 // 渲染用户表格
 function renderUsersTable(users) {
     if (users.length === 0) {
-        document.getElementById('usersTable').innerHTML = '<div class="empty">暂无用户数据</div>';
+        const usersTable = document.getElementById('usersTable');
+      usersTable.innerHTML = '';
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty';
+      emptyDiv.textContent = '暂无用户数据';
+      usersTable.appendChild(emptyDiv);
         return;
     }
     
@@ -220,12 +235,83 @@ function renderUsersTable(users) {
         </table>
     `;
     
-    document.getElementById('usersTable').innerHTML = tableHTML;
+    // 安全地创建用户表格
+    const usersTable = document.getElementById('usersTable');
+    usersTable.innerHTML = '';
+    
+    const table = document.createElement('table');
+    table.className = 'data-table';
+    
+    // 创建表头
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const headers = ['用户ID', '邮箱', '注册时间', '状态', '使用次数', '操作'];
+    
+    headers.forEach(headerText => {
+      const th = document.createElement('th');
+      th.textContent = headerText;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    
+    // 创建表体
+    const tbody = document.createElement('tbody');
+    users.forEach(user => {
+      const row = document.createElement('tr');
+      
+      // 用户ID
+      const idCell = document.createElement('td');
+      idCell.textContent = user.userId.substring(0, 8) + '...';
+      row.appendChild(idCell);
+      
+      // 邮箱
+      const emailCell = document.createElement('td');
+      emailCell.textContent = user.email;
+      row.appendChild(emailCell);
+      
+      // 注册时间
+      const timeCell = document.createElement('td');
+      timeCell.textContent = formatDate(user.createdAt);
+      row.appendChild(timeCell);
+      
+      // 状态
+      const statusCell = document.createElement('td');
+      const statusSpan = document.createElement('span');
+      statusSpan.className = `status ${user.isActive ? 'active' : 'inactive'}`;
+      statusSpan.textContent = user.isActive ? '正常' : '禁用';
+      statusCell.appendChild(statusSpan);
+      row.appendChild(statusCell);
+      
+      // 使用次数
+      const usageCell = document.createElement('td');
+      usageCell.textContent = user.usageCount || 0;
+      row.appendChild(usageCell);
+      
+      // 操作
+      const actionCell = document.createElement('td');
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = `btn ${user.isActive ? 'btn-danger' : 'btn-success'}`;
+      toggleBtn.textContent = user.isActive ? '禁用' : '启用';
+      toggleBtn.onclick = () => toggleUserStatus(user.userId, !user.isActive);
+      actionCell.appendChild(toggleBtn);
+      row.appendChild(actionCell);
+      
+      tbody.appendChild(row);
+    });
+    
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    usersTable.appendChild(table);
 }
 
 // 加载订单数据
 function loadOrders() {
-    document.getElementById('ordersTable').innerHTML = '<div class="loading">加载中...</div>';
+    const ordersTable = document.getElementById('ordersTable');
+    ordersTable.innerHTML = '';
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.textContent = '加载中...';
+    ordersTable.appendChild(loadingDiv);
     
     fetch(`${API_BASE_URL}/admin/orders`, {
         headers: {
@@ -243,16 +329,25 @@ function loadOrders() {
     })
     .catch(error => {
         console.error('加载订单数据失败:', error);
-        // 显示模拟数据
-        ordersData = generateMockOrders();
-        renderOrdersTable(ordersData);
+        // 显示错误信息
+        const ordersTable = document.getElementById('ordersTable');
+        ordersTable.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = '无法连接到服务器，请检查网络连接';
+        ordersTable.appendChild(errorDiv);
     });
 }
 
 // 渲染订单表格
 function renderOrdersTable(orders) {
     if (orders.length === 0) {
-        document.getElementById('ordersTable').innerHTML = '<div class="empty">暂无订单数据</div>';
+        const ordersTable = document.getElementById('ordersTable');
+      ordersTable.innerHTML = '';
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty';
+      emptyDiv.textContent = '暂无订单数据';
+      ordersTable.appendChild(emptyDiv);
         return;
     }
     
@@ -296,12 +391,91 @@ function renderOrdersTable(orders) {
         </table>
     `;
     
-    document.getElementById('ordersTable').innerHTML = tableHTML;
+    // 安全地创建订单表格
+    const ordersTable = document.getElementById('ordersTable');
+    ordersTable.innerHTML = '';
+    
+    const table = document.createElement('table');
+    table.className = 'data-table';
+    
+    // 创建表头
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const headers = ['订单ID', '用户邮箱', '计划', '金额', '状态', '创建时间', '操作'];
+    
+    headers.forEach(headerText => {
+      const th = document.createElement('th');
+      th.textContent = headerText;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    
+    // 创建表体
+    const tbody = document.createElement('tbody');
+    orders.forEach(order => {
+      const row = document.createElement('tr');
+      
+      // 订单ID
+      const idCell = document.createElement('td');
+      idCell.textContent = order.orderId.substring(0, 12) + '...';
+      row.appendChild(idCell);
+      
+      // 用户邮箱
+      const emailCell = document.createElement('td');
+      emailCell.textContent = order.userEmail || '未知';
+      row.appendChild(emailCell);
+      
+      // 计划
+      const planCell = document.createElement('td');
+      planCell.textContent = order.planName;
+      row.appendChild(planCell);
+      
+      // 金额
+      const amountCell = document.createElement('td');
+      amountCell.textContent = `¥${order.amount}`;
+      row.appendChild(amountCell);
+      
+      // 状态
+      const statusCell = document.createElement('td');
+      const statusSpan = document.createElement('span');
+      statusSpan.className = `status ${order.status}`;
+      const statusMap = { pending: '待支付', paid: '已支付', failed: '失败', cancelled: '已取消' };
+      statusSpan.textContent = statusMap[order.status] || order.status;
+      statusCell.appendChild(statusSpan);
+      row.appendChild(statusCell);
+      
+      // 创建时间
+      const timeCell = document.createElement('td');
+      timeCell.textContent = formatDate(order.createdAt);
+      row.appendChild(timeCell);
+      
+      // 操作
+      const actionCell = document.createElement('td');
+      if (order.status === 'pending') {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-danger';
+        cancelBtn.textContent = '取消';
+        cancelBtn.onclick = () => cancelOrder(order.orderId);
+        actionCell.appendChild(cancelBtn);
+      }
+      row.appendChild(actionCell);
+      
+      tbody.appendChild(row);
+    });
+    
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    ordersTable.appendChild(table);
 }
 
 // 加载许可证数据
 function loadLicenses() {
-    document.getElementById('licensesTable').innerHTML = '<div class="loading">加载中...</div>';
+    const licensesTable = document.getElementById('licensesTable');
+    licensesTable.innerHTML = '';
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.textContent = '加载中...';
+    licensesTable.appendChild(loadingDiv);
     
     fetch(`${API_BASE_URL}/admin/licenses`, {
         headers: {
@@ -319,16 +493,25 @@ function loadLicenses() {
     })
     .catch(error => {
         console.error('加载许可证数据失败:', error);
-        // 显示模拟数据
-        licensesData = generateMockLicenses();
-        renderLicensesTable(licensesData);
+        // 显示错误信息
+        const licensesTable = document.getElementById('licensesTable');
+        licensesTable.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = '无法连接到服务器，请检查网络连接';
+        licensesTable.appendChild(errorDiv);
     });
 }
 
 // 渲染许可证表格
 function renderLicensesTable(licenses) {
     if (licenses.length === 0) {
-        document.getElementById('licensesTable').innerHTML = '<div class="empty">暂无许可证数据</div>';
+        const licensesTable = document.getElementById('licensesTable');
+      licensesTable.innerHTML = '';
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty';
+      emptyDiv.textContent = '暂无许可证数据';
+      licensesTable.appendChild(emptyDiv);
         return;
     }
     
@@ -370,7 +553,87 @@ function renderLicensesTable(licenses) {
         </table>
     `;
     
-    document.getElementById('licensesTable').innerHTML = tableHTML;
+    // 安全地创建许可证表格
+    const licensesTable = document.getElementById('licensesTable');
+    licensesTable.innerHTML = '';
+    
+    const table = document.createElement('table');
+    table.className = 'data-table';
+    
+    // 创建表头
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const headers = ['许可证密钥', '计划类型', '用户邮箱', '状态', '激活时间', '到期时间', '操作'];
+    
+    headers.forEach(headerText => {
+      const th = document.createElement('th');
+      th.textContent = headerText;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    
+    // 创建表体
+    const tbody = document.createElement('tbody');
+    licenses.forEach(license => {
+      const row = document.createElement('tr');
+      
+      // 许可证密钥（脱敏显示）
+      const keyCell = document.createElement('td');
+      keyCell.textContent = license.licenseKey.substring(0, 16) + '...';
+      row.appendChild(keyCell);
+      
+      // 计划类型
+      const planCell = document.createElement('td');
+      planCell.textContent = license.planName;
+      row.appendChild(planCell);
+      
+      // 用户邮箱
+      const emailCell = document.createElement('td');
+      emailCell.textContent = license.userEmail || '未激活';
+      row.appendChild(emailCell);
+      
+      // 状态
+      const statusCell = document.createElement('td');
+      const statusSpan = document.createElement('span');
+      statusSpan.className = `status ${license.isActive ? 'active' : 'inactive'}`;
+      statusSpan.textContent = license.isActive ? '有效' : '已撤销';
+      statusCell.appendChild(statusSpan);
+      row.appendChild(statusCell);
+      
+      // 激活时间
+      const activatedCell = document.createElement('td');
+      activatedCell.textContent = license.activatedAt ? formatDate(license.activatedAt) : '未激活';
+      row.appendChild(activatedCell);
+      
+      // 到期时间
+      const expiryCell = document.createElement('td');
+      expiryCell.textContent = license.expiryDate ? formatDate(license.expiryDate) : '永久';
+      row.appendChild(expiryCell);
+      
+      // 操作
+      const actionCell = document.createElement('td');
+      
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'btn btn-primary';
+      viewBtn.textContent = '查看';
+      viewBtn.onclick = () => viewLicense(license.licenseKey);
+      actionCell.appendChild(viewBtn);
+      
+      if (license.isActive) {
+        const revokeBtn = document.createElement('button');
+        revokeBtn.className = 'btn btn-danger';
+        revokeBtn.textContent = '撤销';
+        revokeBtn.onclick = () => revokeLicense(license.licenseKey);
+        actionCell.appendChild(revokeBtn);
+      }
+      
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    });
+    
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    licensesTable.appendChild(table);
 }
 
 // 搜索用户
@@ -733,68 +996,4 @@ function initLicenseTypeChart() {
     });
 }
 
-// 生成模拟数据
-function generateMockUsers() {
-    const mockUsers = [];
-    const emails = ['user1@example.com', 'user2@example.com', 'user3@example.com', 'guest@temp.com', 'pro@example.com'];
-    
-    for (let i = 0; i < emails.length; i++) {
-        mockUsers.push({
-            userId: `user_${Date.now()}_${i}`,
-            email: emails[i],
-            isPro: i === 4,
-            isGuest: i === 3,
-            usageCount: Math.floor(Math.random() * 10),
-            dailyLimit: i === 4 ? 999 : (i === 3 ? 3 : 10),
-            registeredAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            loginAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-            isActive: true
-        });
-    }
-    
-    return mockUsers;
-}
-
-function generateMockOrders() {
-    const mockOrders = [];
-    const plans = ['月度专业版', '年度专业版', '终身会员'];
-    const amounts = [19.9, 199, 499];
-    const statuses = ['paid', 'pending', 'cancelled'];
-    
-    for (let i = 0; i < 5; i++) {
-        const planIndex = Math.floor(Math.random() * plans.length);
-        mockOrders.push({
-            orderId: `order_${Date.now()}_${i}`,
-            userEmail: `user${i + 1}@example.com`,
-            planName: plans[planIndex],
-            amount: amounts[planIndex],
-            paymentMethod: Math.random() > 0.5 ? '支付宝' : '微信支付',
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
-    }
-    
-    return mockOrders;
-}
-
-function generateMockLicenses() {
-    const mockLicenses = [];
-    const plans = ['月度专业版', '年度专业版', '终身会员'];
-    
-    for (let i = 0; i < 5; i++) {
-        const isActive = Math.random() > 0.3;
-        const planName = plans[Math.floor(Math.random() * plans.length)];
-        
-        mockLicenses.push({
-            licenseKey: `license_${Date.now()}_${i}_${Math.random().toString(36).substring(2)}`,
-            planName: planName,
-            userEmail: isActive ? `user${i + 1}@example.com` : null,
-            activatedAt: isActive ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : null,
-            expiryDate: planName === '终身会员' ? null : new Date(Date.now() + Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-            isActive: isActive,
-            isExpired: false
-        });
-    }
-    
-    return mockLicenses;
-}
+// 模拟数据生成函数已移除以提高安全性

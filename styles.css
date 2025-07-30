@@ -29,6 +29,50 @@ body {
     transform: translateY(-1px);
   }
   
+  .secondary-btn {
+    background: #6b7280;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin: 15px 0;
+  }
+  
+  .secondary-btn:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+  }
+  
+  #statusMessage {
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  
+  .status-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+  
+  .status-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+  
+  .status-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+  }
+  
   .result-container {
     background: white;
     border-radius: 8px;

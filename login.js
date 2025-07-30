@@ -1,7 +1,7 @@
 // 用户登录逻辑
 class UserLogin {
   constructor() {
-    this.apiBaseUrl = 'https://api.example.com'; // 替换为实际API地址
+    this.apiBaseUrl = 'http://localhost:3000'; // 本地API服务器地址
     this.init();
   }
 
@@ -72,7 +72,7 @@ class UserLogin {
       });
       
       const result = await response.json();
-      return result.success;
+      return result && result.success;
     } catch (error) {
       console.error('Token验证失败:', error);
       return false;
@@ -151,7 +151,7 @@ class UserLogin {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (result && result.success) {
         // 登录成功，保存用户信息
         await this.saveUserInfo(result.data, rememberMe);
         this.showToast('登录成功！正在跳转...', 'success');
@@ -241,7 +241,7 @@ class UserLogin {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (result && result.success) {
         this.showToast('重置密码邮件已发送，请查收', 'success');
       } else {
         this.showToast(result.message || '发送失败，请重试', 'error');

@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     await initializeUser();
     await checkFirstTimeUser();
     
+    // 清理过期缓存
+    cleanExpiredCache();
+    
     document.getElementById('summarizeBtn').addEventListener('click', handleSummarize);
     document.getElementById('activateLicense').addEventListener('click', handleLicenseActivation);
     
@@ -97,39 +100,79 @@ document.addEventListener('DOMContentLoaded', async function() {
       text-align: center;
     `;
     
-    modal.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <div style="font-size: 24px; margin-bottom: 10px;">🔒</div>
-        <h3 style="margin: 0 0 15px 0; color: #2c3e50;">隐私保护承诺</h3>
-        <p style="margin: 0 0 15px 0; color: #555; line-height: 1.5;">TK智能总结插件承诺：</p>
-        <ul style="text-align: left; color: #666; margin: 0 0 20px 0; padding-left: 20px;">
-          <li>✅ 完全免费使用</li>
-          <li>✅ 不存储用户数据</li>
-          <li>✅ 仅对页面内容总结</li>
-          <li>✅ 严格保护隐私</li>
-        </ul>
-      </div>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button id="viewPrivacyBtn" style="
-          background: #3498db;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-        ">查看详情</button>
-        <button id="acceptPrivacyBtn" style="
-          background: #27ae60;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-        ">我知道了</button>
-      </div>
+    // 安全地创建隐私通知模态框
+    modal.innerHTML = '';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = 'margin-bottom: 20px;';
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.style.cssText = 'font-size: 24px; margin-bottom: 10px;';
+    iconDiv.textContent = '🔒';
+    
+    const h3 = document.createElement('h3');
+    h3.style.cssText = 'margin: 0 0 15px 0; color: #2c3e50;';
+    h3.textContent = '隐私保护承诺';
+    
+    const p = document.createElement('p');
+    p.style.cssText = 'margin: 0 0 15px 0; color: #555; line-height: 1.5;';
+    p.textContent = 'TK智能总结插件承诺：';
+    
+    const ul = document.createElement('ul');
+    ul.style.cssText = 'text-align: left; color: #666; margin: 0 0 20px 0; padding-left: 20px;';
+    
+    const promises = [
+      '✅ 完全免费使用',
+      '✅ 不存储用户数据',
+      '✅ 仅对页面内容总结',
+      '✅ 严格保护隐私'
+    ];
+    
+    promises.forEach(text => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      ul.appendChild(li);
+    });
+    
+    contentDiv.appendChild(iconDiv);
+    contentDiv.appendChild(h3);
+    contentDiv.appendChild(p);
+    contentDiv.appendChild(ul);
+    
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.style.cssText = 'display: flex; gap: 10px; justify-content: center;';
+    
+    const viewPrivacyBtn = document.createElement('button');
+    viewPrivacyBtn.id = 'viewPrivacyBtn';
+    viewPrivacyBtn.style.cssText = `
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
     `;
+    viewPrivacyBtn.textContent = '查看详情';
+    
+    const acceptPrivacyBtn = document.createElement('button');
+    acceptPrivacyBtn.id = 'acceptPrivacyBtn';
+    acceptPrivacyBtn.style.cssText = `
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    acceptPrivacyBtn.textContent = '我知道了';
+    
+    buttonsDiv.appendChild(viewPrivacyBtn);
+    buttonsDiv.appendChild(acceptPrivacyBtn);
+    
+    modal.appendChild(contentDiv);
+    modal.appendChild(buttonsDiv);
     
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
@@ -208,10 +251,10 @@ document.addEventListener('DOMContentLoaded', async function() {
       // 清除Chrome存储
       if (typeof chrome !== 'undefined' && chrome.storage) {
         await chrome.storage.local.remove(['userInfo', 'usageCount', 'isPro']);
+      } else {
+        // 非扩展环境才清除localStorage
+        localStorage.removeItem('userInfo');
       }
-      
-      // 清除localStorage
-      localStorage.removeItem('userInfo');
     } catch (error) {
       console.error('清除用户信息失败:', error);
     }
@@ -227,12 +270,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (userInfo) {
           return userInfo;
         }
-      }
-      
-      // 从localStorage获取
-      const localUserInfo = localStorage.getItem('userInfo');
-      if (localUserInfo) {
-        return JSON.parse(localUserInfo);
+      } else {
+        // 非扩展环境才从localStorage获取
+        const localUserInfo = localStorage.getItem('userInfo');
+        if (localUserInfo) {
+          return JSON.parse(localUserInfo);
+        }
       }
       
       return null;
@@ -249,10 +292,10 @@ document.addEventListener('DOMContentLoaded', async function() {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         // 保存到Chrome存储
         await chrome.storage.local.set({ userInfo });
+      } else {
+        // 非扩展环境才使用localStorage
+        localStorage.setItem('userInfo', JSON.stringify(userInfo));
       }
-      
-      // 保存到localStorage
-      localStorage.setItem('userInfo', JSON.stringify(userInfo));
     } catch (error) {
       console.error('保存用户信息失败:', error);
     }
@@ -270,23 +313,57 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     const authSection = document.createElement('div');
     authSection.className = 'auth-section';
-    authSection.innerHTML = `
-      <div class="auth-prompt">
-        <h3>🔐 登录或注册</h3>
-        <p>登录后享受每日10次免费智能总结</p>
-        <div class="auth-buttons">
-          <button id="loginBtn" class="auth-btn login-btn">登录</button>
-          <button id="registerBtn" class="auth-btn register-btn">注册</button>
-        </div>
-        <div class="guest-option">
-          <button id="guestBtn" class="guest-btn">游客模式（每日3次）</button>
-        </div>
-      </div>
-    `;
+    // 安全地创建认证选项
+    authSection.innerHTML = '';
+    const authPrompt = document.createElement('div');
+    authPrompt.className = 'auth-prompt';
+    
+    const h3 = document.createElement('h3');
+    h3.textContent = '🔐 登录或注册';
+    
+    const p = document.createElement('p');
+    p.textContent = '登录后享受每日10次免费智能总结';
+    
+    const authButtons = document.createElement('div');
+    authButtons.className = 'auth-buttons';
+    
+    const loginBtn = document.createElement('button');
+    loginBtn.id = 'loginBtn';
+    loginBtn.className = 'auth-btn login-btn';
+    loginBtn.textContent = '登录';
+    
+    const registerBtn = document.createElement('button');
+    registerBtn.id = 'registerBtn';
+    registerBtn.className = 'auth-btn register-btn';
+    registerBtn.textContent = '注册';
+    
+    authButtons.appendChild(loginBtn);
+    authButtons.appendChild(registerBtn);
+    
+    const guestOption = document.createElement('div');
+    guestOption.className = 'guest-option';
+    
+    const guestBtn = document.createElement('button');
+    guestBtn.id = 'guestBtn';
+    guestBtn.className = 'guest-btn';
+    guestBtn.textContent = '游客模式（每日3次）';
+    
+    guestOption.appendChild(guestBtn);
+    
+    authPrompt.appendChild(h3);
+    authPrompt.appendChild(p);
+    authPrompt.appendChild(authButtons);
+    authPrompt.appendChild(guestOption);
+    authSection.appendChild(authPrompt);
     
     // 插入到总结按钮之前
     const summarizeBtn = document.getElementById('summarizeBtn');
-    container.insertBefore(authSection, summarizeBtn);
+    if (summarizeBtn && summarizeBtn.parentNode === container) {
+      container.insertBefore(authSection, summarizeBtn);
+    } else {
+      // 如果找不到summarizeBtn或它不是container的子元素，则追加到container末尾
+      container.appendChild(authSection);
+    }
     
     // 绑定事件
     document.getElementById('loginBtn').addEventListener('click', openLoginPage);
@@ -418,17 +495,36 @@ document.addEventListener('DOMContentLoaded', async function() {
   function updateGuestPrompt(remaining) {
     const proPrompt = document.getElementById('proPrompt');
     if (proPrompt && remaining <= 1) {
-      const originalHTML = proPrompt.innerHTML;
-      proPrompt.innerHTML = `
-        <div class="guest-upgrade-prompt">
-          <p>🎯 游客模式次数即将用完</p>
-          <p>注册账号立即获得每日10次免费总结！</p>
-          <div class="quick-auth-buttons">
-            <button id="quickRegisterBtn" class="quick-auth-btn">立即注册</button>
-            <button id="quickLoginBtn" class="quick-auth-btn">已有账号</button>
-          </div>
-        </div>
-      `;
+      // 安全地创建游客升级提示内容
+      proPrompt.innerHTML = '';
+      const guestUpgradeDiv = document.createElement('div');
+      guestUpgradeDiv.className = 'guest-upgrade-prompt';
+      
+      const p1 = document.createElement('p');
+      p1.textContent = '🎯 游客模式次数即将用完';
+      
+      const p2 = document.createElement('p');
+      p2.textContent = '注册账号立即获得每日10次免费总结！';
+      
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.className = 'quick-auth-buttons';
+      
+      const quickRegisterBtn = document.createElement('button');
+      quickRegisterBtn.id = 'quickRegisterBtn';
+      quickRegisterBtn.className = 'quick-auth-btn';
+      quickRegisterBtn.textContent = '立即注册';
+      
+      const quickLoginBtn = document.createElement('button');
+      quickLoginBtn.id = 'quickLoginBtn';
+      quickLoginBtn.className = 'quick-auth-btn';
+      quickLoginBtn.textContent = '已有账号';
+      
+      buttonsDiv.appendChild(quickRegisterBtn);
+      buttonsDiv.appendChild(quickLoginBtn);
+      guestUpgradeDiv.appendChild(p1);
+      guestUpgradeDiv.appendChild(p2);
+      guestUpgradeDiv.appendChild(buttonsDiv);
+      proPrompt.appendChild(guestUpgradeDiv);
       
       // 绑定快速注册/登录按钮
       document.getElementById('quickRegisterBtn')?.addEventListener('click', openRegisterPage);
@@ -477,14 +573,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return await response.json();
       }
       
-      // 模拟验证逻辑（仅用于演示）
-      if (licenseKey.startsWith('TK-PRO-')) {
-        return {
-          success: true,
-          planType: 'lifetime',
-          expiry: null
-        };
-      }
+      // 移除模拟验证逻辑以提高安全性
       
       return { success: false };
     } catch (error) {
@@ -532,34 +621,31 @@ document.addEventListener('DOMContentLoaded', async function() {
       let content;
       if (includeImages) {
         // 获取文本和图片内容
-        const [result] = await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: async () => {
-            return new Promise((resolve) => {
-              chrome.runtime.sendMessage({ action: "extractContent" }, (response) => {
-                resolve(response);
-              });
-            });
-          }
+        const response = await new Promise((resolve) => {
+          chrome.tabs.sendMessage(tab.id, { action: "extractContent" }, resolve);
         });
         
-        if (result.result.success) {
-          content = result.result.content;
+        if (response && response.success) {
+          content = response.content;
         } else {
-          throw new Error(result.result.error || '获取内容失败');
+          throw new Error(response?.error || '获取内容失败');
         }
       } else {
         // 只获取文本内容
-        const [contentResult] = await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: () => document.body.innerText.trim()
+        const response = await new Promise((resolve) => {
+          chrome.tabs.sendMessage(tab.id, { action: "extractTextOnly" }, resolve);
         });
-        content = { text: contentResult.result, images: [] };
+        
+        if (response && response.success) {
+          content = { text: response.content, images: [] };
+        } else {
+          throw new Error(response?.error || '获取文本内容失败');
+        }
       }
 
       // 生成总结
       const summary = await generateSummary(content);
-      document.getElementById('result').innerHTML = summary;
+      document.getElementById('result').textContent = summary;
       
       // 保存到历史记录
       await saveToHistory({
@@ -595,7 +681,34 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
   
   async function generateSummary(content) {
+    // 简单的内容缓存机制 - 使用安全的哈希方法
+    const contentStr = JSON.stringify(content);
+    let contentHash = 0;
+    for (let i = 0; i < contentStr.length; i++) {
+      const char = contentStr.charCodeAt(i);
+      contentHash = ((contentHash << 5) - contentHash) + char;
+      contentHash = contentHash & contentHash; // 转换为32位整数
+    }
+    const cacheKey = `summary_cache_${Math.abs(contentHash).toString(36)}`;
+    
+    // 检查缓存（仅在chrome扩展环境中）
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      try {
+        const { [cacheKey]: cachedSummary } = await chrome.storage.local.get(cacheKey);
+        if (cachedSummary && cachedSummary.timestamp > Date.now() - 3600000) { // 1小时缓存
+          return cachedSummary.summary;
+        }
+      } catch (error) {
+        console.log('缓存读取失败:', error);
+      }
+    }
+    
     const { deepseekApiKey } = await chrome.storage.local.get('deepseekApiKey');
+    
+    // 检查API密钥是否已配置
+    if (!deepseekApiKey || deepseekApiKey.trim() === '') {
+      throw new Error('请先配置DeepSeek API密钥！\n\n📖 配置步骤：\n1. 点击下方"API设置"按钮\n2. 按照页面教程获取API密钥\n3. 输入密钥并保存\n\n💡 DeepSeek提供免费额度，足够日常使用');
+    }
     
     let messages;
     let model = "deepseek-chat";
@@ -603,15 +716,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (typeof content === 'string') {
       // 兼容旧的纯文本模式
       messages = [{
-        role: "user",
-        content: `请用简洁的中文总结以下内容，保留关键数据和结论：\n\n${content.slice(0, 12000)}`
-      }];
+          role: "user",
+          content: `请用简洁的中文总结以下内容，保留关键数据和结论：\n\n${content.slice(0, 6000)}`
+        }];
     } else {
       // 新的多模态模式
       const { text, images, tables } = content;
       
-      // 构建提示文本
-      let promptText = `请分析以下网页内容并生成简洁的中文总结：\n\n文本内容：\n${text.slice(0, 8000)}`;
+      // 构建提示文本 - 减少内容长度以提高速度
+      let promptText = `请分析以下网页内容并生成简洁的中文总结：\n\n文本内容：\n${text.slice(0, 5000)}`;
       
       // 添加表格信息
       if (tables && tables.length > 0) {
@@ -620,12 +733,12 @@ document.addEventListener('DOMContentLoaded', async function() {
           promptText += `表格${index + 1}: ${table.summary}\n`;
           if (table.headers.length > 0 && table.rows.length > 0) {
             promptText += `表头: ${table.headers.join(' | ')}\n`;
-            // 只显示前3行数据作为示例
-            const sampleRows = table.rows.slice(0, 3);
+            // 只显示前2行数据作为示例，减少处理量
+            const sampleRows = table.rows.slice(0, 2);
             sampleRows.forEach(row => {
               promptText += `${row.join(' | ')}\n`;
             });
-            if (table.rows.length > 3) {
+            if (table.rows.length > 2) {
               promptText += `...（共${table.rows.length}行数据）\n`;
             }
           }
@@ -644,8 +757,8 @@ document.addEventListener('DOMContentLoaded', async function() {
           }
         ];
         
-        // 添加图片（最多3张以避免token过多）
-        for (let i = 0; i < Math.min(images.length, 3); i++) {
+        // 添加图片（最多2张以提高处理速度）
+        for (let i = 0; i < Math.min(images.length, 2); i++) {
           const img = images[i];
           messageContent.push({
             type: "image_url",
@@ -668,6 +781,9 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     }
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+    
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -677,18 +793,69 @@ document.addEventListener('DOMContentLoaded', async function() {
       body: JSON.stringify({
         model: model,
         messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000
-      })
+        temperature: 0.3, // 降低随机性，提高响应速度
+        max_tokens: 800,  // 减少token数量，加快生成速度
+        stream: false     // 确保非流式响应
+      }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
   
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API请求失败: ${response.status} - ${errorData.error?.message || '未知错误'}`);
+      let errorMessage = '未知错误';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData && errorData.error && errorData.error.message ? errorData.error.message : `HTTP ${response.status}`;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}`;
+      }
+      throw new Error(`API请求失败: ${response.status} - ${errorMessage}`);
     }
     
     const data = await response.json();
-    return data.choices[0].message.content;
+    const summary = data.choices[0].message.content;
+    
+    // 保存到缓存（仅在chrome扩展环境中）
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      try {
+        await chrome.storage.local.set({
+          [cacheKey]: {
+            summary: summary,
+            timestamp: Date.now()
+          }
+        });
+      } catch (error) {
+        console.log('缓存保存失败:', error);
+      }
+    }
+    
+    return summary;
+  }
+  
+  // 清理过期缓存
+  async function cleanExpiredCache() {
+    // 检查chrome API是否可用
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      return;
+    }
+    
+    try {
+      const storage = await chrome.storage.local.get();
+      const expiredKeys = [];
+      
+      for (const [key, value] of Object.entries(storage)) {
+        if (key.startsWith('summary_cache_') && value.timestamp < Date.now() - 3600000) {
+          expiredKeys.push(key);
+        }
+      }
+      
+      if (expiredKeys.length > 0) {
+        await chrome.storage.local.remove(expiredKeys);
+      }
+    } catch (error) {
+      console.log('缓存清理失败:', error);
+    }
   }
   
   // 辅助函数
@@ -736,7 +903,7 @@ async function handleBackgroundSummarize(content, includeImages) {
     
     // 生成总结
     const summary = await generateSummary(content);
-    document.getElementById('result').innerHTML = summary;
+    document.getElementById('result').textContent = summary;
     
     // 保存到历史记录
     await saveToHistory({
@@ -893,7 +1060,7 @@ async function showHistory() {
             <p style="margin: 5px 0; font-size: 13px; color: #333;">${summaryPreview}</p>
           </div>
           <div style="margin-top: 10px;">
-            <button onclick="copyToClipboard('${record.summary.replace(/'/g, "\\'").replace(/"/g, '\\"')}')" style="
+            <button onclick="copyToClipboard('${record.summary.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}')" style="
               background: #27ae60;
               color: white;
               border: none;
@@ -918,6 +1085,8 @@ async function showHistory() {
     });
     
     historyHTML += '</div>';
+    
+    // 使用构建好的HTML内容
     modal.innerHTML = historyHTML;
     overlay.appendChild(modal);
     document.body.appendChild(overlay);

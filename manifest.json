@@ -1,51 +1,55 @@
 {
-    "manifest_version": 3,
-    "name": "智能页面总结助手",
-    "version": "2.5",
-  "description": "完全免费的智能页面总结工具，不存储用户数据，严格保护隐私，仅对页面内容进行总结以便预览",
-    "permissions": ["activeTab", "scripting", "storage", "contextMenus", "notifications"],
-    "host_permissions": ["https://api.deepseek.com/*", "*://*/*"],
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "images/icon16.png",
-        "48": "images/icon48.png",
-        "128": "images/icon128.png"
-      }
-    },
-    "icons": {
-      "16": "images/icon16.png",
-      "48": "images/icon48.png",
-      "128": "images/icon128.png"
-    },
-    "background": {
-      "service_worker": "background.js"
-    },
-    "commands": {
-      "quick_summarize": {
-        "suggested_key": {
-          "default": "Ctrl+Shift+S",
-          "mac": "Command+Shift+S"
-        },
-        "description": "Quick summarize current page / 快速总结当前页面"
+  "manifest_version": 3,
+  "name": "TK智能总结",
+  "version": "2.5.0",
+  "description": "智能页面总结工具，支持文本和图片分析",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://api.deepseek.com/*",
+    "https://*/*",
+    "http://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TK智能总结"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "quick_summarize": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S"
       },
-      "toggle_image_analysis": {
-        "suggested_key": {
-          "default": "Ctrl+Shift+I",
-          "mac": "Command+Shift+I"
-        },
-        "description": "Toggle image analysis mode / 切换图片分析模式"
-      }
+      "description": "快速总结当前页面"
     },
-    "content_scripts": [{
-      "matches": ["<all_urls>"],
-      "js": ["contentScript.js"],
-      "run_at": "document_end"
-    }],
-    "web_accessible_resources": [
+    "toggle_image_analysis": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+I"
+      },
+      "description": "切换图片分析模式"
+    }
+  },
+  "content_scripts": [
     {
-      "resources": ["settings.html", "subscription.html", "payment-success.html", "register.html", "login.html", "privacy.html"],
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup.html",
+        "settings.html",
+        "help.html",
+        "privacy.html",
+        "styles.css"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
-  }
+}

@@ -98,11 +98,26 @@ function showCurrentPlan(planType, expiry) {
       expiryText = `<p style="color: #059669;">终身有效</p>`;
     }
     
-    planDetailsDiv.innerHTML = `
-      <p><strong>${plan.name}</strong> - ¥${plan.price} ${plan.period}</p>
-      ${expiryText}
-      <p style="color: #64748b; font-size: 14px;">享受无限次使用和所有高级功能</p>
-    `;
+    // 安全地创建计划详情
+    planDetailsDiv.innerHTML = '';
+    
+    const planNameP = document.createElement('p');
+    const strongEl = document.createElement('strong');
+    strongEl.textContent = plan.name;
+    planNameP.appendChild(strongEl);
+    planNameP.appendChild(document.createTextNode(` - ¥${plan.price} ${plan.period}`));
+    planDetailsDiv.appendChild(planNameP);
+    
+    if (expiryText) {
+      const expiryDiv = document.createElement('div');
+      expiryDiv.innerHTML = expiryText;
+      planDetailsDiv.appendChild(expiryDiv);
+    }
+    
+    const featureP = document.createElement('p');
+    featureP.style.cssText = 'color: #64748b; font-size: 14px;';
+    featureP.textContent = '享受无限次使用和所有高级功能';
+    planDetailsDiv.appendChild(featureP);
     
     currentPlanDiv.style.display = 'block';
   }
@@ -114,11 +129,24 @@ function showUsageInfo(usageCount) {
   const currentPlanDiv = document.getElementById('currentPlan');
   const planDetailsDiv = document.getElementById('planDetails');
   
-  planDetailsDiv.innerHTML = `
-    <p><strong>免费版</strong></p>
-    <p style="color: ${remaining > 10 ? '#059669' : '#dc2626'};">今日剩余使用次数: ${remaining}/50</p>
-    <p style="color: #64748b; font-size: 14px;">升级专业版享受无限使用</p>
-  `;
+  // 安全地创建使用情况信息
+  planDetailsDiv.innerHTML = '';
+  
+  const freeVersionP = document.createElement('p');
+  const strongEl = document.createElement('strong');
+  strongEl.textContent = '免费版';
+  freeVersionP.appendChild(strongEl);
+  planDetailsDiv.appendChild(freeVersionP);
+  
+  const remainingP = document.createElement('p');
+  remainingP.style.color = remaining > 10 ? '#059669' : '#dc2626';
+  remainingP.textContent = `今日剩余使用次数: ${remaining}/50`;
+  planDetailsDiv.appendChild(remainingP);
+  
+  const upgradeP = document.createElement('p');
+  upgradeP.style.cssText = 'color: #64748b; font-size: 14px;';
+  upgradeP.textContent = '升级专业版享受无限使用';
+  planDetailsDiv.appendChild(upgradeP);
   
   currentPlanDiv.style.display = 'block';
 }
@@ -141,12 +169,24 @@ function openPaymentModal(planType) {
   currentSelectedPlan = planType;
   const plan = SUBSCRIPTION_PLANS[planType];
   
-  document.getElementById('selectedPlan').innerHTML = `
-    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <h3 style="margin: 0 0 8px 0;">${plan.name}</h3>
-      <p style="margin: 0; color: #3b82f6; font-size: 18px; font-weight: 600;">¥${plan.price} ${plan.period}</p>
-    </div>
-  `;
+  // 安全地创建选中计划信息
+  const selectedPlanDiv = document.getElementById('selectedPlan');
+  selectedPlanDiv.innerHTML = '';
+  
+  const planContainer = document.createElement('div');
+  planContainer.style.cssText = 'background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;';
+  
+  const h3 = document.createElement('h3');
+  h3.style.cssText = 'margin: 0 0 8px 0;';
+  h3.textContent = plan.name;
+  planContainer.appendChild(h3);
+  
+  const priceP = document.createElement('p');
+  priceP.style.cssText = 'margin: 0; color: #3b82f6; font-size: 18px; font-weight: 600;';
+  priceP.textContent = `¥${plan.price} ${plan.period}`;
+  planContainer.appendChild(priceP);
+  
+  selectedPlanDiv.appendChild(planContainer);
   
   // 重置支付方式选择
   document.querySelectorAll('.payment-method').forEach(method => {
@@ -282,12 +322,12 @@ function startPaymentStatusPolling(orderId) {
 async function checkPaymentStatus(orderId) {
   // 这里应该调用实际的支付状态查询API
   // 示例返回模拟状态
-  const response = await fetch(`https://api.example.com/payment/status/${orderId}`);
+  const response = await fetch(`http://localhost:3000/api/orders/${orderId}`);
   if (response.ok) {
     return await response.json();
   }
   
-  // 模拟支付成功（仅用于演示）
+  // 实际支付状态查询逻辑应在此处实现
   return { status: 'pending' };
 }
 
@@ -344,6 +384,32 @@ async function handleLicenseActivation() {
     const isValid = await validateLicenseKey(licenseKey);
     
     if (isValid.success) {
+      // 获取当前用户信息
+      let userInfo = {};
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+          const result = await chrome.storage.local.get(['userInfo']);
+          userInfo = result.userInfo || {};
+      } else {
+          userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      }
+      
+      // 使用更安全的存储方式保存订阅信息
+      const updatedUserInfo = {
+          ...userInfo,
+          subscription: {
+              planType: isValid.planType || 'lifetime',
+              status: 'active',
+              expiryDate: isValid.expiry ? new Date(isValid.expiry).toISOString() : null,
+              licenseKey: licenseKey
+          }
+      };
+      
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+          await chrome.storage.local.set({ userInfo: updatedUserInfo });
+      } else {
+          localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+      }
+      
       await chrome.storage.local.set({
         isPro: true,
         subscriptionPlan: isValid.planType || 'lifetime',
@@ -368,8 +434,17 @@ async function handleLicenseActivation() {
 // 验证许可证密钥
 async function validateLicenseKey(licenseKey) {
   try {
+    // 使用更安全的存储方式获取用户信息
+    let userInfo = {};
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        const result = await chrome.storage.local.get(['userInfo']);
+        userInfo = result.userInfo || {};
+    } else {
+        userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    }
+    
     // 这里应该调用实际的许可证验证API
-    const response = await fetch('https://api.example.com/license/validate', {
+    const response = await fetch('http://localhost:3000/api/license/validate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -381,14 +456,7 @@ async function validateLicenseKey(licenseKey) {
       return await response.json();
     }
     
-    // 模拟验证逻辑（仅用于演示）
-    if (licenseKey.startsWith('TK-PRO-')) {
-      return {
-        success: true,
-        planType: 'lifetime',
-        expiry: null
-      };
-    }
+    // 移除模拟验证逻辑以提高安全性
     
     return { success: false };
   } catch (error) {

@@ -7,13 +7,40 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const app = express();
 
-// CORS配置 - 限制允许的域名
+// CORS配置 - 限制允许的源域名
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'https://your-domain.com',
-    'chrome-extension://*' // 允许Chrome扩展
-  ],
+  origin: function (origin, callback) {
+    // 允许的域名列表
+    const allowedOrigins = [
+      'chrome-extension://*', // Chrome扩展
+      'moz-extension://*',    // Firefox扩展
+      'https://localhost:*',  // 本地开发
+      'http://localhost:*',   // 本地开发
+      'https://127.0.0.1:*',  // 本地开发
+      'http://127.0.0.1:*'    // 本地开发
+    ];
+    
+    // 如果没有origin（如直接访问HTML文件、Postman等工具），允许访问
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // 检查origin是否在允许列表中
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed.includes('*')) {
+        const pattern = allowed.replace('*', '.*');
+        return new RegExp(pattern).test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -45,6 +72,10 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use('/api/', apiLimiter); // 对所有API应用频率限制
 
+// 静态文件服务 - 提供HTML文件访问
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..')));
+
 // 模拟数据库
 const subscriptions = new Map();
 const licenses = new Map();
@@ -55,11 +86,57 @@ const verificationCodes = new Map(); // email -> { code, expiry, attempts }
 const userTokens = new Map(); // token -> { userId, expiry }
 const adminTokens = new Map(); // token -> { username, expiry }
 
+// 密码强度验证函数
+function validatePasswordStrength(password) {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (password.length < minLength) {
+        return { valid: false, message: '密码长度至少8位' };
+    }
+    
+    if (!hasUpperCase) {
+        return { valid: false, message: '密码必须包含大写字母' };
+    }
+    
+    if (!hasLowerCase) {
+        return { valid: false, message: '密码必须包含小写字母' };
+    }
+    
+    if (!hasNumbers) {
+        return { valid: false, message: '密码必须包含数字' };
+    }
+    
+    if (!hasSpecialChar) {
+        return { valid: false, message: '密码必须包含特殊字符' };
+    }
+    
+    // 检查常见弱密码
+    const weakPasswords = ['password', '12345678', 'admin123', 'qwerty123'];
+    if (weakPasswords.some(weak => password.toLowerCase().includes(weak.toLowerCase()))) {
+        return { valid: false, message: '密码过于简单，请使用更复杂的密码' };
+    }
+    
+    return { valid: true };
+}
+
+// 强制检查默认密码
+const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+const passwordValidation = validatePasswordStrength(defaultPassword);
+if (!passwordValidation.valid) {
+    console.error('⚠️  警告：管理员密码不符合安全要求:', passwordValidation.message);
+    console.error('请设置环境变量 ADMIN_PASSWORD 为强密码');
+    process.exit(1);
+}
+
 // 管理员账户（实际部署时应该从数据库读取）
 const adminAccounts = new Map([
     ['admin', {
         username: 'admin',
-        password: hashPassword(process.env.ADMIN_PASSWORD || 'admin123'), // 从环境变量读取密码
+        password: hashPassword(defaultPassword),
         name: '系统管理员',
         role: 'admin',
         createdAt: new Date().toISOString()
@@ -351,7 +428,7 @@ setInterval(cleanupExpiredTokens, 60 * 60 * 1000);
 // 用户认证相关API
 
 // 发送邮箱验证码
-app.post('/api/auth/send-verification', strictLimiter, (req, res) => {
+app.post('/api/auth/send-verification', strictLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     
@@ -381,14 +458,53 @@ app.post('/api/auth/send-verification', strictLimiter, (req, res) => {
       sentAt: Date.now()
     });
     
-    // 这里应该发送真实的邮件，现在只是模拟
-    console.log(`验证码发送到 ${email}: ${code}`);
-    
-    res.json({
-      success: true,
-      message: '验证码已发送到您的邮箱'
-      // 注意：为了安全，不再返回验证码到客户端
-    });
+    // 尝试发送真实邮件，失败时降级到模拟模式
+    try {
+      // 检查是否配置了邮件服务
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const nodemailer = require('nodemailer');
+        
+        const transporter = nodemailer.createTransporter({
+          host: process.env.SMTP_HOST,
+          port: process.env.SMTP_PORT || 587,
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        });
+        
+        const mailOptions = {
+          from: process.env.SMTP_FROM || `"智能页面总结" <${process.env.SMTP_USER}>`,
+          to: email,
+          subject: '智能页面总结 - 邮箱验证码',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #333; text-align: center;">智能页面总结</h1>
+              <div style="background: #f8f9fa; border-radius: 8px; padding: 30px; text-align: center; margin: 20px 0;">
+                <h2 style="color: #333;">您的验证码</h2>
+                <div style="font-size: 32px; font-weight: bold; color: #007cff; letter-spacing: 5px; margin: 20px 0;">${code}</div>
+                <p style="color: #666;">验证码有效期为 10 分钟</p>
+              </div>
+              <p style="color: #999; text-align: center;">如果这不是您的操作，请忽略此邮件。</p>
+            </div>
+          `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log(`📧 验证码邮件发送成功: ${email}`);
+        res.json({ success: true, message: '验证码已发送到您的邮箱' });
+      } else {
+        // 邮件配置不完整，使用模拟模式
+        console.log(`📧 [模拟模式] 验证码发送到 ${email}: ${code}`);
+        console.log(`📧 [开发提示] 请在控制台查看验证码，或配置邮件服务环境变量`);
+        res.json({ success: true, message: '验证码已发送（开发模式：请查看控制台）', devMode: true, code: code });
+      }
+    } catch (error) {
+      console.error('📧 邮件发送失败，降级到模拟模式:', error);
+      console.log(`📧 [降级模拟] 验证码发送到 ${email}: ${code}`);
+      res.json({ success: true, message: '验证码已发送（模拟模式：请查看控制台）', devMode: true, code: code });
+    }
     
   } catch (error) {
     console.error('发送验证码失败:', error);
